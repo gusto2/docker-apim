@@ -22,9 +22,9 @@ MAINTAINER WSO2 Docker Maintainers "dev@wso2.org"
 
 # set user configurations
 ARG USER=wso2carbon
-ARG USER_ID=802
+ARG USER_ID=8020
 ARG USER_GROUP=wso2
-ARG USER_GROUP_ID=802
+ARG USER_GROUP_ID=8020
 ARG USER_HOME=/home/${USER}
 # set dependant files directory
 ARG FILES=./files
@@ -36,6 +36,7 @@ ARG WSO2_SERVER=wso2am
 ARG WSO2_SERVER_VERSION=2.6.0
 ARG WSO2_SERVER_PACK=${WSO2_SERVER}-${WSO2_SERVER_VERSION}
 ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER_PACK}
+
 # set WSO2 EULA
 ARG MOTD='printf "\n\
  Welcome to WSO2 Docker Resources \n\
@@ -54,17 +55,25 @@ RUN groupadd --system -g ${USER_GROUP_ID} ${USER_GROUP} && \
     useradd --system --create-home --home-dir ${USER_HOME} --no-log-init -g ${USER_GROUP_ID} -u ${USER_ID} ${USER}
 
 # copy the jdk and wso2 product distributions to user's home directory
-COPY --chown=wso2carbon:wso2 ${FILES}/${JDK} ${USER_HOME}/java/
-COPY --chown=wso2carbon:wso2 ${FILES}/${WSO2_SERVER_PACK}/ ${WSO2_SERVER_HOME}/
+COPY ${FILES}/${JDK} ${USER_HOME}/java/
+COPY ${FILES}/${WSO2_SERVER_PACK}/ ${WSO2_SERVER_HOME}/
 # copy shared artifacts to a temporary location
-COPY --chown=wso2carbon:wso2 ${FILES}/${WSO2_SERVER_PACK}/repository/deployment/server/ ${USER_HOME}/wso2-tmp/server/
+COPY ${FILES}/${WSO2_SERVER_PACK}/repository/deployment/server/ ${USER_HOME}/wso2-tmp/server/
 # copy init script to user home
-COPY --chown=wso2carbon:wso2 init.sh ${USER_HOME}/
+COPY init.sh ${USER_HOME}/
 # copy mysql connector jar to the server as a third party library
-COPY --chown=wso2carbon:wso2 ${FILES}/mysql-connector-java-*-bin.jar ${WSO2_SERVER_HOME}/repository/components/lib/
+#COPY ${FILES}/mysql-connector-java-*-bin.jar ${WSO2_SERVER_HOME}/repository/components/lib/
+COPY ${FILES}/ojdbc*.jar ${WSO2_SERVER_HOME}/repository/components/lib/
+# copy keystores
+COPY ${FILES}/*.jks ${WSO2_SERVER_HOME}/repository/resources/security/
+
 # add libraries for Kubernetes membership scheme based clustering
-ADD --chown=wso2carbon:wso2 https://repo1.maven.org/maven2/dnsjava/dnsjava/2.1.8/dnsjava-2.1.8.jar ${WSO2_SERVER_HOME}/repository/components/lib/
-ADD --chown=wso2carbon:wso2 https://repo1.maven.org/maven2/org/wso2/carbon/kubernetes/artifacts/kubernetes-membership-scheme/1.0.5/kubernetes-membership-scheme-1.0.5.jar ${WSO2_SERVER_HOME}/repository/components/dropins/
+#ADD https://repo1.maven.org/maven2/dnsjava/dnsjava/2.1.8/dnsjava-2.1.8.jar ${WSO2_SERVER_HOME}/repository/components/lib/
+#ADD https://repo1.maven.org/maven2/org/wso2/carbon/kubernetes/artifacts/kubernetes-membership-scheme/1.0.5/kubernetes-membership-scheme-1.0.5.jar ${WSO2_SERVER_HOME}/repository/components/dropins/
+COPY ${FILES}/dnsjava-2.1.8.jar ${WSO2_SERVER_HOME}/repository/components/lib/
+COPY ${FILES}/kubernetes-membership-scheme-1.0.1.jar ${WSO2_SERVER_HOME}/repository/components/dropins/
+
+RUN chown -R wso2carbon:wso2 ${WSO2_SERVER_HOME}
 
 # set the user and work directory
 USER ${USER_ID}
@@ -80,4 +89,6 @@ ENV JAVA_HOME=${JAVA_HOME} \
 EXPOSE 8280 8243 9763 9443 9099 5672 9711 9611 7711 7611 10397
 
 # initiate container and start WSO2 Carbon server
-ENTRYPOINT ${WORKING_DIRECTORY}/init.sh
+#ENTRYPOINT ${WORKING_DIRECTORY}/init.sh
+CMD ${WORKING_DIRECTORY}/init.sh
+
