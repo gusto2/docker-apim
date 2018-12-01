@@ -17,13 +17,15 @@
 # ------------------------------------------------------------------------
 
 # set to product base image
-FROM wso2am-analytics-base:2.6.0-centos
+#FROM wso2am-analytics-base:2.6.0-centos
+FROM wso2am-analytics-base:2.6.0-v01
 
 # copy init script to user home
-COPY --chown=wso2carbon:wso2 init.sh ${WORKING_DIRECTORY}/
+COPY init.sh ${WORKING_DIRECTORY}/
 
 # expose ports
 EXPOSE 9091 9444 7712 7612 9613 9713 7444 7071
 
 # start WSO2 Carbon server
-ENTRYPOINT ${WORKING_DIRECTORY}/init.sh
+#ENTRYPOINT ${WORKING_DIRECTORY}/init.sh
+CMD ${WORKING_DIRECTORY}/init.sh
