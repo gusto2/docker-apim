@@ -22,9 +22,9 @@ MAINTAINER WSO2 Docker Maintainers "dev@wso2.org"
 
 # set user configurations
 ARG USER=wso2carbon
-ARG USER_ID=802
+ARG USER_ID=8020
 ARG USER_GROUP=wso2
-ARG USER_GROUP_ID=802
+ARG USER_GROUP_ID=8020
 ARG USER_HOME=/home/${USER}
 # set dependant files directory
 ARG FILES=./files
@@ -36,6 +36,8 @@ ARG WSO2_SERVER=wso2am-analytics
 ARG WSO2_SERVER_VERSION=2.6.0
 ARG WSO2_SERVER_PACK=${WSO2_SERVER}-${WSO2_SERVER_VERSION}
 ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER_PACK}
+ARG JDBC_DRIVER=ojdbc6_1.0.0.jar
+
 # set WSO2 EULA
 ARG MOTD='printf "\n\
  Welcome to WSO2 Docker Resources \n\
@@ -54,10 +56,19 @@ RUN groupadd --system -g ${USER_GROUP_ID} ${USER_GROUP} && \
     useradd --system --create-home --home-dir ${USER_HOME} --no-log-init -g ${USER_GROUP_ID} -u ${USER_ID} ${USER}
 
 # copy the jdk and wso2 product distributions to user's home directory
-COPY --chown=wso2carbon:wso2 ${FILES}/${JDK} ${USER_HOME}/java/
-COPY --chown=wso2carbon:wso2 ${FILES}/${WSO2_SERVER_PACK}/ ${WSO2_SERVER_HOME}/
+COPY ${FILES}/${JDK} ${USER_HOME}/java/
+COPY ${FILES}/${WSO2_SERVER_PACK}/ ${WSO2_SERVER_HOME}/
 # copy mysql connector jar to the server as a third party library
-COPY --chown=wso2carbon:wso2 ${FILES}/mysql-connector-java-*-bin.jar ${WSO2_SERVER_HOME}/lib/
+#COPY ${FILES}/mysql-connector-java-*-bin.jar ${WSO2_SERVER_HOME}/lib/
+COPY  ${FILES}/${JDBC_DRIVER} ${WSO2_SERVER_HOME}/lib/
+
+# copy keystore and truststore
+COPY ${FILES}/wso2carbon.jks  ${WSO2_SERVER_HOME}/resources/security/
+COPY ${FILES}/client-truststore.jks ${WSO2_SERVER_HOME}/wso2/dashboard/conf/data-bridge/
+COPY ${FILES}/client-truststore.jks ${WSO2_SERVER_HOME}/wso2/worker/conf/data-bridge/
+COPY ${FILES}/client-truststore.jks ${WSO2_SERVER_HOME}/manager/conf/data-bridge/
+COPY ${FILES}/client-truststore.jks ./wso2am-analytics-2.6.0/resources/security/
+RUN chown -R wso2carbon:wso2 ${WSO2_SERVER_HOME}
 
 # set the user and work directory
 USER ${USER_ID}
@@ -71,3 +82,4 @@ ENV JAVA_HOME=${JAVA_HOME} \
 
 # expose ports
 EXPOSE 9091 9444 7712 7612 9613 9713 7444 7071
+
